@@ -1,6 +1,6 @@
-// Content Script for ClipBoarder
+// Content Script for ClipBoarder - Modern Liquid Glass UI
 
-// Helper to show non-intrusive floating toast notifications
+// Helper to show non-intrusive floating glassmorphic toast in top-right
 function showToast(message, type = 'info') {
   let toastContainer = document.getElementById('clipboarder-toast-container');
   if (!toastContainer) {
@@ -8,75 +8,91 @@ function showToast(message, type = 'info') {
     toastContainer.id = 'clipboarder-toast-container';
     toastContainer.style.cssText = `
       position: fixed;
-      bottom: 24px;
+      top: 24px;
       right: 24px;
       z-index: 2147483647;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       pointer-events: none;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
     `;
     document.documentElement.appendChild(toastContainer);
   }
 
   const toast = document.createElement('div');
-  const bgColor = type === 'success' ? '#10B981' : (type === 'error' ? '#EF4444' : '#1F2937');
+  
+  // Liquid glass accent tints
+  let accentGradient = 'linear-gradient(135deg, rgba(30, 41, 59, 0.72) 0%, rgba(15, 23, 42, 0.82) 100%)';
+  let borderColor = 'rgba(255, 255, 255, 0.16)';
+  let glowColor = 'rgba(0, 0, 0, 0.25)';
+
+  if (type === 'success') {
+    accentGradient = 'linear-gradient(135deg, rgba(6, 78, 59, 0.75) 0%, rgba(4, 47, 46, 0.85) 100%)';
+    borderColor = 'rgba(52, 211, 153, 0.35)';
+    glowColor = 'rgba(16, 185, 129, 0.2)';
+  } else if (type === 'error') {
+    accentGradient = 'linear-gradient(135deg, rgba(127, 29, 29, 0.75) 0%, rgba(69, 10, 10, 0.85) 100%)';
+    borderColor = 'rgba(248, 113, 113, 0.35)';
+    glowColor = 'rgba(239, 68, 68, 0.2)';
+  }
+
   toast.style.cssText = `
-    background-color: ${bgColor};
-    color: #FFFFFF;
+    background: ${accentGradient};
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid ${borderColor};
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px 0 ${glowColor}, inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    color: #F8FAFC;
     padding: 10px 16px;
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 13px;
     font-weight: 500;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateY(-12px) scale(0.96);
+    transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     align-items: center;
-    gap: 8px;
-    max-width: 320px;
+    gap: 10px;
+    max-width: 340px;
     pointer-events: auto;
   `;
 
   toast.innerHTML = `
-    <span style="font-size: 15px;">${type === 'success' ? '📋' : 'ℹ️'}</span>
-    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${message}</span>
+    <span style="font-size: 16px; line-height: 1;">${type === 'success' ? '📋' : (type === 'error' ? '⚠️' : 'ℹ️')}</span>
+    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.01em;">${message}</span>
   `;
 
   toastContainer.appendChild(toast);
 
-  // Trigger animation
+  // Animate in
   requestAnimationFrame(() => {
     toast.style.opacity = '1';
-    toast.style.transform = 'translateY(0)';
+    toast.style.transform = 'translateY(0) scale(1)';
   });
 
-  // Fade out and remove
+  // Fade out & slide up
   setTimeout(() => {
     toast.style.opacity = '0';
-    toast.style.transform = 'translateY(10px)';
+    toast.style.transform = 'translateY(-10px) scale(0.95)';
     setTimeout(() => {
       toast.remove();
       if (toastContainer && toastContainer.children.length === 0) {
         toastContainer.remove();
       }
     }, 250);
-  }, 2200);
+  }, 2300);
 }
 
-// Extract selected text from active DOM element or page selection
+// Extract selected text
 function getSelectedText() {
   let selectedText = '';
-
-  // 1. Standard window selection
   const selection = window.getSelection();
   if (selection && selection.toString().trim()) {
     selectedText = selection.toString();
   }
 
-  // 2. Focused input or textarea
   const activeEl = document.activeElement;
   if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
     const start = activeEl.selectionStart;
@@ -89,14 +105,13 @@ function getSelectedText() {
   return selectedText.trim();
 }
 
-// Safely insert text into the focused target element
+// Safely insert text into focused target element
 function insertTextAtCursor(text) {
   if (!text) return false;
   const activeEl = document.activeElement;
 
   if (!activeEl) return false;
 
-  // Try document.execCommand first for undo-history compatibility
   let inserted = false;
   try {
     inserted = document.execCommand('insertText', false, text);
@@ -105,11 +120,11 @@ function insertTextAtCursor(text) {
   }
 
   if (inserted) {
-    showToast('Pasted from ClipBoarder', 'success');
+    showToast('Pasted into active input', 'success');
     return true;
   }
 
-  // Fallback for standard input / textarea
+  // Fallback for input / textarea
   if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') {
     const start = activeEl.selectionStart ?? activeEl.value.length;
     const end = activeEl.selectionEnd ?? activeEl.value.length;
@@ -121,11 +136,10 @@ function insertTextAtCursor(text) {
       activeEl.selectionStart = activeEl.selectionEnd = start + text.length;
     }
 
-    // Dispatch input and change events for framework binding (React, Vue, etc.)
     activeEl.dispatchEvent(new Event('input', { bubbles: true }));
     activeEl.dispatchEvent(new Event('change', { bubbles: true }));
 
-    showToast('Pasted from ClipBoarder', 'success');
+    showToast('Pasted into active input', 'success');
     return true;
   }
 
@@ -143,12 +157,12 @@ function insertTextAtCursor(text) {
       selection.addRange(range);
 
       activeEl.dispatchEvent(new Event('input', { bubbles: true }));
-      showToast('Pasted from ClipBoarder', 'success');
+      showToast('Pasted into active input', 'success');
       return true;
     }
   }
 
-  showToast('Focus an editable field to paste', 'error');
+  showToast('Focus an input field to paste', 'error');
   return false;
 }
 
@@ -160,7 +174,7 @@ function performCopy() {
       { action: 'SAVE_CLIP', text: selectedText },
       (response) => {
         if (response && response.success) {
-          const preview = selectedText.length > 25 ? `${selectedText.substring(0, 25)}...` : selectedText;
+          const preview = selectedText.length > 22 ? `${selectedText.substring(0, 22)}...` : selectedText;
           showToast(`Copied: "${preview}"`, 'success');
         }
       }
@@ -182,7 +196,7 @@ function performPaste(specifiedText) {
     if (clips.length > 0) {
       insertTextAtCursor(clips[0].text);
     } else {
-      showToast('ClipBoarder is empty', 'info');
+      showToast('ClipBoarder history is empty', 'info');
     }
   });
 }
@@ -191,21 +205,19 @@ function performPaste(specifiedText) {
 window.addEventListener(
   'keydown',
   (e) => {
-    // Check for Alt + Shift + C
     if (e.altKey && e.shiftKey && (e.key === 'C' || e.key === 'c' || e.code === 'KeyC')) {
       e.preventDefault();
       performCopy();
       return;
     }
 
-    // Check for Alt + Shift + V
     if (e.altKey && e.shiftKey && (e.key === 'V' || e.key === 'v' || e.code === 'KeyV')) {
       e.preventDefault();
       performPaste();
       return;
     }
   },
-  true // Capturing phase
+  true
 );
 
 // Listen for messages from background script

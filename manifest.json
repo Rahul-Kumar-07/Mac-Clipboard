@@ -1,62 +1,58 @@
 {
-    "manifest_version": 3,
-    "name": "ClipBoarder - History & Quick Paste",
-    "version": "1.0.0",
-    "description": "Multi-item clipboard manager and quick paste tool for macOS and Chrome.",
-    "permissions": [
-        "storage",
-        "activeTab",
-        "clipboardRead",
-        "clipboardWrite"
-    ],
-    "action": {
-        "default_popup": "popup.html",
-        "default_icon": {
-            "16": "icons/icon16.png",
-            "48": "icons/icon48.png",
-            "128": "icons/icon128.png"
-        }
-    },
-    "background": {
-        "service_worker": "background.js"
-    },
-    "content_scripts": [
-        {
-            "matches": [
-                "<all_urls>"
-            ],
-            "js": [
-                "content.js"
-            ],
-            "run_at": "document_end"
-        }
-    ],
-    "commands": {
-        "copy-selection": {
-            "suggested_key": {
-                "default": "Alt+Shift+C",
-                "mac": "Alt+Shift+C"
-            },
-            "description": "Copy selected text to Clipboard History"
-        },
-        "paste-recent": {
-            "suggested_key": {
-                "default": "Alt+Shift+V",
-                "mac": "Alt+Shift+V"
-            },
-            "description": "Paste most recent clip into active input"
-        },
-        "_execute_action": {
-            "suggested_key": {
-                "default": "Alt+Shift+P",
-                "mac": "Alt+Shift+P"
-            },
-            "description": "Open Clipboard History popup"
-        }
-    },
-    "icons": {
-        "16": "icons/icon16.png",
-        "48": "icons/icon48.png",
-        "128": "icons/icon128.png"
+  "manifest_version": 3,
+  "name": "ClipBoarder - History & Quick Paste",
+  "version": "1.0.1",
+  "description": "Multi-item clipboard manager and quick paste tool for macOS and Chrome.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "clipboardRead",
+    "clipboardWrite"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
     }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+P",
+        "mac": "Alt+Shift+P"
+      },
+      "description": "Open Clipboard History popup"
+    },
+    "copy-selection": {
+      "suggested_key": {
+        "default": "Alt+Shift+C",
+        "mac": "Alt+Shift+C"
+      },
+      "description": "Copy selected text to Clipboard History"
+    },
+    "paste-recent": {
+      "suggested_key": {
+        "default": "Alt+Shift+V",
+        "mac": "Alt+Shift+V"
+      },
+      "description": "Paste most recent clip into active input"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
 }

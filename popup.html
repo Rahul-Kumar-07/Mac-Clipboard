@@ -7,6 +7,10 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
+  <!-- Ambient glow backdrop for liquid glass reflection -->
+  <div class="glass-orb orb-1"></div>
+  <div class="glass-orb orb-2"></div>
+
   <div class="app-container">
     <!-- Header -->
     <header class="header">
@@ -18,8 +22,8 @@
         </div>
       </div>
       <div class="header-actions">
-        <button id="clear-all-btn" class="icon-btn danger" title="Clear all unpinned clips">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button id="clear-all-btn" class="glass-icon-btn danger" title="Clear unpinned clips">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="3 6 5 6 21 6"></polyline>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
           </svg>
@@ -27,14 +31,14 @@
       </div>
     </header>
 
-    <!-- Search & Filter Bar -->
+    <!-- Search Section -->
     <div class="search-section">
       <div class="search-input-wrapper">
         <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
-        <input type="text" id="search-input" placeholder="Search clips..." autocomplete="off">
+        <input type="text" id="search-input" placeholder="Search saved clips..." autocomplete="off">
         <button id="clear-search-btn" class="clear-search-btn hidden">&times;</button>
       </div>
     </div>
@@ -46,16 +50,19 @@
 
     <!-- Empty State -->
     <div id="empty-state" class="empty-state hidden">
-      <div class="empty-icon">📝</div>
-      <h3>No clips yet</h3>
-      <p>Select any text and press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> to save it here.</p>
+      <div class="empty-icon-card">📝</div>
+      <h3>No clips saved</h3>
+      <p>Select any text and press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> to copy it to your clipboard history.</p>
     </div>
 
-    <!-- Footer Shortcuts Info -->
+    <!-- Footer with all 3 shortcuts -->
     <footer class="footer">
       <div class="shortcut-tip">
-        <span>Save: <kbd>Alt+Shift+C</kbd></span>
-        <span>Paste: <kbd>Alt+Shift+V</kbd></span>
+        <span class="sc-item">Save: <kbd>Alt+Shift+C</kbd></span>
+        <span class="sc-divider">•</span>
+        <span class="sc-item">Paste: <kbd>Alt+Shift+V</kbd></span>
+        <span class="sc-divider">•</span>
+        <span class="sc-item">Open: <kbd>Alt+Shift+P</kbd></span>
       </div>
     </footer>
   </div>

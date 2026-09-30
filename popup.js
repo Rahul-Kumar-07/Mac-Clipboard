@@ -1,4 +1,4 @@
-// Popup UI Controller
+// Popup UI Controller - Modern Liquid Glass Edition
 
 let allClips = [];
 let searchQuery = '';
@@ -33,7 +33,7 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// Render clips list based on current filters and search
+// Render clips list
 function renderClips() {
   const filtered = allClips.filter((clip) =>
     clip.text.toLowerCase().includes(searchQuery.toLowerCase())
@@ -46,10 +46,10 @@ function renderClips() {
     emptyState.classList.remove('hidden');
     if (searchQuery) {
       emptyState.querySelector('h3').textContent = 'No matching clips';
-      emptyState.querySelector('p').textContent = 'Try adjusting your search terms.';
+      emptyState.querySelector('p').textContent = 'Try searching with different keywords.';
     } else {
-      emptyState.querySelector('h3').textContent = 'No clips yet';
-      emptyState.querySelector('p').innerHTML = 'Select any text and press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> to save it here.';
+      emptyState.querySelector('h3').textContent = 'No clips saved';
+      emptyState.querySelector('p').innerHTML = 'Select any text and press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> to copy it to your clipboard history.';
     }
     return;
   }
@@ -57,7 +57,7 @@ function renderClips() {
   emptyState.classList.add('hidden');
   clipsList.innerHTML = '';
 
-  // Sort pinned first, then by timestamp descending
+  // Sort: pinned first, then newest first
   filtered.sort((a, b) => {
     if (a.pinned && !b.pinned) return -1;
     if (!a.pinned && b.pinned) return 1;
@@ -68,62 +68,94 @@ function renderClips() {
     const card = document.createElement('div');
     card.className = `clip-card ${clip.pinned ? 'pinned' : ''}`;
     card.dataset.id = clip.id;
+    card.title = 'Click to paste directly into webpage & copy to Mac clipboard';
 
     const charCount = clip.text.length;
     const lineCount = clip.text.split('\n').length;
-    const metaStats = `${charCount} chars${lineCount > 1 ? ` • ${lineCount} lines` : ''}`;
+    const metaStats = `${charCount}c${lineCount > 1 ? ` • ${lineCount}L` : ''}`;
 
     card.innerHTML = `
       <div class="clip-content">${escapeHtml(clip.text)}</div>
       <div class="clip-meta">
-        <span>${formatTime(clip.timestamp)} • ${metaStats}</span>
+        <div class="clip-meta-info">
+          <span class="meta-label">${formatTime(clip.timestamp)}</span>
+          <span>•</span>
+          <span>${metaStats}</span>
+        </div>
         <div class="clip-actions">
-          <button class="btn-action paste" title="Paste into active webpage input">
+          <button class="glass-btn paste" title="Paste directly into webpage field">
             <span>Paste</span>
           </button>
-          <button class="btn-action pin ${clip.pinned ? 'active' : ''}" title="${clip.pinned ? 'Unpin' : 'Pin to top'}">
-            <span>${clip.pinned ? '📌 Pinned' : '📌 Pin'}</span>
+          <button class="glass-btn copy" title="Copy to Mac clipboard for Cmd+V">
+            <span>Copy</span>
           </button>
-          <button class="btn-action delete" title="Delete clip">
+          <button class="glass-btn pin ${clip.pinned ? 'active' : ''}" title="${clip.pinned ? 'Unpin snippet' : 'Pin snippet'}">
+            <span>${clip.pinned ? '📌' : '📌'}</span>
+          </button>
+          <button class="glass-btn delete" title="Delete snippet">
             <span>🗑️</span>
           </button>
         </div>
       </div>
     `;
 
-    // Clicking card body copies to clipboard
+    // 1. CLICKING THE CARD BODY DIRECTLY PASTES AND COPIES
     card.addEventListener('click', async (e) => {
-      // Ignore if clicking action buttons directly
       if (e.target.closest('.clip-actions')) return;
 
+      // Copy to Mac system clipboard so Cmd+V also works
       await navigator.clipboard.writeText(clip.text);
-      card.classList.add('flash-copied');
-      const metaSpan = card.querySelector('.clip-meta span');
-      const originalText = metaSpan.textContent;
-      metaSpan.textContent = '✓ Copied to clipboard!';
-      setTimeout(() => {
-        metaSpan.textContent = originalText;
-        card.classList.remove('flash-copied');
-      }, 1000);
-    });
 
-    // Paste button action
-    const pasteBtn = card.querySelector('.btn-action.paste');
-    pasteBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
+      // Directly paste into active input in web tab
       chrome.runtime.sendMessage({
         action: 'PASTE_TO_ACTIVE_TAB',
         text: clip.text,
-      }, (res) => {
-        pasteBtn.innerHTML = '<span>✓ Done</span>';
-        setTimeout(() => {
-          pasteBtn.innerHTML = '<span>Paste</span>';
-        }, 1200);
       });
+
+      card.classList.add('flash-pasted');
+      const metaLabel = card.querySelector('.meta-label');
+      const orig = metaLabel.textContent;
+      metaLabel.textContent = '✓ Pasted & Copied!';
+      setTimeout(() => {
+        metaLabel.textContent = orig;
+        card.classList.remove('flash-pasted');
+      }, 1200);
     });
 
-    // Pin button action
-    const pinBtn = card.querySelector('.btn-action.pin');
+    // 2. PASTE BUTTON
+    const pasteBtn = card.querySelector('.glass-btn.paste');
+    pasteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(clip.text);
+      chrome.runtime.sendMessage({
+        action: 'PASTE_TO_ACTIVE_TAB',
+        text: clip.text,
+      });
+      pasteBtn.innerHTML = '<span>✓ Done</span>';
+      setTimeout(() => {
+        pasteBtn.innerHTML = '<span>Paste</span>';
+      }, 1200);
+    });
+
+    // 3. COPY BUTTON (Direct Mac copy for Cmd+V)
+    const copyBtn = card.querySelector('.glass-btn.copy');
+    copyBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await navigator.clipboard.writeText(clip.text);
+      card.classList.add('flash-copied');
+      copyBtn.innerHTML = '<span>✓ Copied</span>';
+      const metaLabel = card.querySelector('.meta-label');
+      const orig = metaLabel.textContent;
+      metaLabel.textContent = '✓ Ready for Cmd+V';
+      setTimeout(() => {
+        copyBtn.innerHTML = '<span>Copy</span>';
+        metaLabel.textContent = orig;
+        card.classList.remove('flash-copied');
+      }, 1400);
+    });
+
+    // 4. PIN BUTTON
+    const pinBtn = card.querySelector('.glass-btn.pin');
     pinBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       clip.pinned = !clip.pinned;
@@ -131,8 +163,8 @@ function renderClips() {
       renderClips();
     });
 
-    // Delete button action
-    const deleteBtn = card.querySelector('.btn-action.delete');
+    // 5. DELETE BUTTON
+    const deleteBtn = card.querySelector('.glass-btn.delete');
     deleteBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       allClips = allClips.filter((c) => c.id !== clip.id);
@@ -151,7 +183,7 @@ async function loadClips() {
   renderClips();
 }
 
-// Search input handling
+// Search handling
 searchInput.addEventListener('input', (e) => {
   searchQuery = e.target.value.trim();
   clearSearchBtn.classList.toggle('hidden', !searchQuery);
@@ -166,7 +198,7 @@ clearSearchBtn.addEventListener('click', () => {
   searchInput.focus();
 });
 
-// Clear all clips button
+// Clear all unpinned
 clearAllBtn.addEventListener('click', async () => {
   if (allClips.length === 0) return;
   const hasPinned = allClips.some((c) => c.pinned);
@@ -178,7 +210,7 @@ clearAllBtn.addEventListener('click', async () => {
   }
 });
 
-// Auto-refresh when storage updates in the background
+// Auto-sync storage changes
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.clips) {
     allClips = changes.clips.newValue || [];
@@ -186,5 +218,4 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 });
 
-// Initial load
 loadClips();
