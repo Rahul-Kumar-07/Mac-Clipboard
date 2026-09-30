@@ -166,16 +166,25 @@ function insertTextAtCursor(text) {
   return false;
 }
 
-// Perform copy action
 function performCopy() {
   const selectedText = getSelectedText();
   if (selectedText) {
+    // Write directly to macOS system clipboard so Cmd+V immediately pastes it
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(selectedText).catch(() => {
+        try {
+          document.execCommand('copy');
+        } catch (e) {}
+      });
+    }
+
+    // Save to extension history
     chrome.runtime.sendMessage(
       { action: 'SAVE_CLIP', text: selectedText },
       (response) => {
         if (response && response.success) {
           const preview = selectedText.length > 22 ? `${selectedText.substring(0, 22)}...` : selectedText;
-          showToast(`Copied: "${preview}"`, 'success');
+          showToast(`Copied: "${preview}" (Ready for Cmd+V)`, 'success');
         }
       }
     );
@@ -183,6 +192,16 @@ function performCopy() {
     showToast('No text selected to copy', 'error');
   }
 }
+
+// Automatically sync standard Cmd+C or context-menu copy events into history
+document.addEventListener('copy', () => {
+  setTimeout(() => {
+    const text = getSelectedText();
+    if (text) {
+      chrome.runtime.sendMessage({ action: 'SAVE_CLIP', text });
+    }
+  }, 30);
+});
 
 // Perform paste action of most recent clip
 function performPaste(specifiedText) {
