@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClipBoarder</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <div class="logo-icon">📋</div>
+        <div class="brand-title">
+          <h1>ClipBoarder</h1>
+          <span id="clip-count" class="badge">0 items</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="clear-all-btn" class="icon-btn danger" title="Clear all unpinned clips">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Search & Filter Bar -->
+    <div class="search-section">
+      <div class="search-input-wrapper">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="search-input" placeholder="Search clips..." autocomplete="off">
+        <button id="clear-search-btn" class="clear-search-btn hidden">&times;</button>
+      </div>
+    </div>
+
+    <!-- Clips List Area -->
+    <main class="clips-container" id="clips-list">
+      <!-- Injected dynamically -->
+    </main>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="empty-state hidden">
+      <div class="empty-icon">📝</div>
+      <h3>No clips yet</h3>
+      <p>Select any text and press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> to save it here.</p>
+    </div>
+
+    <!-- Footer Shortcuts Info -->
+    <footer class="footer">
+      <div class="shortcut-tip">
+        <span>Save: <kbd>Alt+Shift+C</kbd></span>
+        <span>Paste: <kbd>Alt+Shift+V</kbd></span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
