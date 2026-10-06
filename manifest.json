@@ -1,11 +1,10 @@
 {
   "manifest_version": 3,
   "name": "ClipBoarder - History & Quick Paste",
-  "version": "1.1.0",
+  "version": "1.0.1",
   "description": "Multi-item clipboard manager and quick paste tool for macOS and Chrome.",
   "permissions": [
     "storage",
-    "unlimitedStorage",
     "activeTab",
     "clipboardRead",
     "clipboardWrite"
@@ -25,17 +24,7 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"],
-      "run_at": "document_start",
-      "all_frames": true,
-      "match_about_blank": true
-    },
-    {
-      "matches": ["<all_urls>"],
-      "js": ["page_hook.js"],
-      "run_at": "document_start",
-      "world": "MAIN",
-      "all_frames": true,
-      "match_about_blank": true
+      "run_at": "document_end"
     }
   ],
   "commands": {

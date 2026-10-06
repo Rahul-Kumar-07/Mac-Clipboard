@@ -1,4 +1,4 @@
-// Content Script for ClipBoarder - Text, Image, PDF, and Page Button Support
+// Content Script for ClipBoarder - Modern Liquid Glass UI
 
 // Helper to show non-intrusive floating glassmorphic toast in top-right
 function showToast(message, type = 'info') {
@@ -21,7 +21,8 @@ function showToast(message, type = 'info') {
   }
 
   const toast = document.createElement('div');
-
+  
+  // Liquid glass accent tints
   let accentGradient = 'linear-gradient(135deg, rgba(30, 41, 59, 0.72) 0%, rgba(15, 23, 42, 0.82) 100%)';
   let borderColor = 'rgba(255, 255, 255, 0.16)';
   let glowColor = 'rgba(0, 0, 0, 0.25)';
@@ -54,7 +55,7 @@ function showToast(message, type = 'info') {
     display: flex;
     align-items: center;
     gap: 10px;
-    max-width: 360px;
+    max-width: 340px;
     pointer-events: auto;
   `;
 
@@ -65,11 +66,13 @@ function showToast(message, type = 'info') {
 
   toastContainer.appendChild(toast);
 
+  // Animate in
   requestAnimationFrame(() => {
     toast.style.opacity = '1';
     toast.style.transform = 'translateY(0) scale(1)';
   });
 
+  // Fade out & slide up
   setTimeout(() => {
     toast.style.opacity = '0';
     toast.style.transform = 'translateY(-10px) scale(0.95)';
@@ -82,7 +85,7 @@ function showToast(message, type = 'info') {
   }, 2300);
 }
 
-// Extract selected text from DOM
+// Extract selected text
 function getSelectedText() {
   let selectedText = '';
   const selection = window.getSelection();
@@ -102,119 +105,12 @@ function getSelectedText() {
   return selectedText.trim();
 }
 
-// Read system clipboard items (supports both Images and Text)
-async function syncFromClipboard(showSuccessToast = false) {
-  try {
-    if (!navigator.clipboard) return false;
-
-    // 1. Try reading clipboard items (images & rich content)
-    if (navigator.clipboard.read) {
-      try {
-        const items = await navigator.clipboard.read();
-        for (const item of items) {
-          for (const type of item.types) {
-            if (type.startsWith('image/')) {
-              const blob = await item.getType(type);
-              const reader = new FileReader();
-              reader.onload = () => {
-                const dataUrl = reader.result;
-                chrome.runtime.sendMessage({
-                  action: 'SAVE_IMAGE_CLIP',
-                  dataUrl,
-                  mimeType: type,
-                  sizeBytes: blob.size,
-                });
-                if (showSuccessToast) {
-                  showToast('Copied Image to ClipBoarder', 'success');
-                }
-              };
-              reader.readAsDataURL(blob);
-              return true;
-            }
-          }
-        }
-      } catch (e) {
-        // Fall through to text read
-      }
-    }
-
-    // 2. Read text from clipboard
-    if (navigator.clipboard.readText) {
-      const text = await navigator.clipboard.readText();
-      if (text && text.trim()) {
-        chrome.runtime.sendMessage({ action: 'SAVE_CLIP', text: text.trim() });
-        if (showSuccessToast) {
-          const preview = text.length > 22 ? `${text.substring(0, 22)}...` : text;
-          showToast(`Copied: "${preview}"`, 'success');
-        }
-        return true;
-      }
-    }
-  } catch (err) {
-    // Permission or focus issue
-  }
-  return false;
-}
-
-// Perform copy action (works on Webpages, PDFs, and embedded controls)
-async function performCopy() {
-  let selectedText = getSelectedText();
-
-  // 1. Normal DOM text selection
-  if (selectedText) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(selectedText).catch(() => {
-        try { document.execCommand('copy'); } catch (e) {}
-      });
-    }
-    chrome.runtime.sendMessage({ action: 'SAVE_CLIP', text: selectedText });
-    const preview = selectedText.length > 22 ? `${selectedText.substring(0, 22)}...` : selectedText;
-    showToast(`Copied: "${preview}"`, 'success');
-    return;
-  }
-
-  // 2. PDF / Iframe / Shadow DOM fallback:
-  // Trigger standard copy command on focused element (triggers PDF viewer's native copy)
-  try {
-    document.execCommand('copy');
-  } catch (e) {}
-
-  // Allow browser tick to update clipboard
-  await new Promise((resolve) => setTimeout(resolve, 80));
-
-  // Sync from clipboard (reads PDF copied text or image)
-  const success = await syncFromClipboard(true);
-  if (!success) {
-    showToast('No text or image selected', 'error');
-  }
-}
-
-// Safely insert text or image at cursor
-function insertTextAtCursor(text, clip = null) {
-  const activeEl = document.activeElement;
-  if (!activeEl) return false;
-
-  // Handle image insertion
-  if (clip && clip.type === 'image') {
-    if (activeEl.isContentEditable) {
-      const img = document.createElement('img');
-      img.src = clip.dataUrl;
-      img.style.maxWidth = '100%';
-      const selection = window.getSelection();
-      if (selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        range.deleteContents();
-        range.insertNode(img);
-        showToast('Pasted image into editor', 'success');
-        return true;
-      }
-    }
-    showToast('Focus a rich-text editor to paste images (or use Cmd+V)', 'info');
-    return false;
-  }
-
-  // Handle text insertion
+// Safely insert text into focused target element
+function insertTextAtCursor(text) {
   if (!text) return false;
+  const activeEl = document.activeElement;
+
+  if (!activeEl) return false;
 
   let inserted = false;
   try {
@@ -228,6 +124,7 @@ function insertTextAtCursor(text, clip = null) {
     return true;
   }
 
+  // Fallback for input / textarea
   if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') {
     const start = activeEl.selectionStart ?? activeEl.value.length;
     const end = activeEl.selectionEnd ?? activeEl.value.length;
@@ -246,6 +143,7 @@ function insertTextAtCursor(text, clip = null) {
     return true;
   }
 
+  // Fallback for contenteditable elements
   if (activeEl.isContentEditable) {
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
@@ -268,25 +166,61 @@ function insertTextAtCursor(text, clip = null) {
   return false;
 }
 
+function performCopy() {
+  const selectedText = getSelectedText();
+  if (selectedText) {
+    // Write directly to macOS system clipboard so Cmd+V immediately pastes it
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(selectedText).catch(() => {
+        try {
+          document.execCommand('copy');
+        } catch (e) {}
+      });
+    }
+
+    // Save to extension history
+    chrome.runtime.sendMessage(
+      { action: 'SAVE_CLIP', text: selectedText },
+      (response) => {
+        if (response && response.success) {
+          const preview = selectedText.length > 22 ? `${selectedText.substring(0, 22)}...` : selectedText;
+          showToast(`Copied: "${preview}" (Ready for Cmd+V)`, 'success');
+        }
+      }
+    );
+  } else {
+    showToast('No text selected to copy', 'error');
+  }
+}
+
+// Automatically sync standard Cmd+C or context-menu copy events into history
+document.addEventListener('copy', () => {
+  setTimeout(() => {
+    const text = getSelectedText();
+    if (text) {
+      chrome.runtime.sendMessage({ action: 'SAVE_CLIP', text });
+    }
+  }, 30);
+});
+
 // Perform paste action of most recent clip
-function performPaste(specifiedText, clip = null) {
-  if (specifiedText || clip) {
-    insertTextAtCursor(specifiedText, clip);
+function performPaste(specifiedText) {
+  if (specifiedText) {
+    insertTextAtCursor(specifiedText);
     return;
   }
 
   chrome.storage.local.get({ clips: [] }, (data) => {
     const clips = data.clips || [];
     if (clips.length > 0) {
-      const topClip = clips[0];
-      insertTextAtCursor(topClip.text || '', topClip);
+      insertTextAtCursor(clips[0].text);
     } else {
       showToast('ClipBoarder history is empty', 'info');
     }
   });
 }
 
-// 1. Direct keyboard shortcuts listener (Alt+Shift+C & Alt+Shift+V)
+// Direct keyboard shortcuts listener (Alt+Shift+C & Alt+Shift+V)
 window.addEventListener(
   'keydown',
   (e) => {
@@ -305,34 +239,13 @@ window.addEventListener(
   true
 );
 
-// 2. Automatically sync standard Cmd+C / Ctrl+C or context-menu copy events into history
-document.addEventListener('copy', () => {
-  setTimeout(() => {
-    syncFromClipboard(false);
-  }, 40);
-});
-
-// 3. Listen for programmatic copy events intercepted from page buttons (via page_hook.js)
-window.addEventListener('message', async (e) => {
-  if (e.source !== window || !e.data) return;
-  if (e.data.source === 'CLIPBOARDER_PAGE_COPY' && e.data.text) {
-    chrome.runtime.sendMessage({ action: 'SAVE_CLIP', text: e.data.text });
-    const preview = e.data.text.length > 22 ? `${e.data.text.substring(0, 22)}...` : e.data.text;
-    showToast(`Copied from page: "${preview}"`, 'success');
-  } else if (e.data.source === 'CLIPBOARDER_PAGE_WRITE_EVENT') {
-    setTimeout(() => {
-      syncFromClipboard(false);
-    }, 40);
-  }
-});
-
-// 4. Listen for messages from background script
+// Listen for messages from background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'TRIGGER_COPY') {
     performCopy();
     sendResponse({ success: true });
   } else if (request.action === 'TRIGGER_PASTE') {
-    performPaste(request.text, request.clip);
+    performPaste(request.text);
     sendResponse({ success: true });
   }
 });
